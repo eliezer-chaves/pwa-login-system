@@ -30,7 +30,6 @@ if (!(isset($_SESSION['user_id'])) || !(isset($_SESSION['role']))) {
     }
 }
 
-
 // Verifica se houve erro na conexão
 if ($conn->connect_error) {
     die("Conexão falhou: " . $conn->connect_error);
