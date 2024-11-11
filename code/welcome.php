@@ -32,29 +32,34 @@ if ($_SESSION['role'] !== 'user') {
 }
 
 
-// Verifica se houve erro na conexão
-if ($conn->connect_error) {
-    die("Erro de conexão: " . $conn->connect_error);
+
+try {
+    $conexao = criarConexao();
+} catch (Exception $e) {
+    echo '{ "Exceção_capturada": "' . $e->getMessage() . '"}';
 }
 
 // Buscar o usuário logado diretamente pelo ID (presumindo que o ID seja passado por GET ou POST)
 $user_id = $_SESSION['user_id']; // Agora pegamos o ID diretamente da sessão
-$sql = "SELECT nome, email, telefone FROM users WHERE id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
 
-if ($result->num_rows > 0) {
-    $user_data = $result->fetch_assoc();
+// Prepara a consulta para buscar nome, email e telefone do usuário pelo ID usando PDO
+$sql = "SELECT nome, email, telefone FROM users WHERE id = :id";
+$stmt = $conexao->prepare($sql);
+$stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
+$stmt->execute();
+
+// Verifica se o usuário foi encontrado
+if ($stmt->rowCount() > 0) {
+    $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
 } else {
     echo "Usuário não encontrado.";
     exit();
 }
 
 // Fecha a conexão
-$conn->close();
+$conexao = null;
 ?>
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -76,7 +81,7 @@ $conn->close();
 
         .header {
             background-color: rgba(255, 255, 255, 0.9);
-            
+
             position: fixed;
             top: 0;
             width: 100%;
@@ -87,7 +92,7 @@ $conn->close();
             text-decoration: none;
             color: #007bff;
             min-height: 50px;
-            
+
         }
 
         .welcome {
@@ -118,7 +123,8 @@ $conn->close();
         }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
 
 </head>
 
@@ -136,24 +142,30 @@ $conn->close();
 
             <div class="mb-3 text-start">
                 <label for="nome" class="form-label ">Nome</label>
-                <input type="text" class="form-control" id="nome" name="nome" value="<?php echo htmlspecialchars($user_data['nome']); ?>" required>
+                <input type="text" class="form-control" id="nome" name="nome"
+                    value="<?php echo htmlspecialchars($user_data['nome']); ?>" required>
             </div>
             <div class="mb-3 text-start">
                 <label for="email" class="form-label text-start">Email</label>
-                <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user_data['email']); ?>" required>
+                <input type="email" class="form-control" id="email" name="email"
+                    value="<?php echo htmlspecialchars($user_data['email']); ?>" required>
             </div>
             <div class="mb-3 text-start">
                 <label for="telefone" class="form-label text-start">Telefone</label>
-                <input type="text" class="form-control" id="telefone" name="telefone" value="<?php echo htmlspecialchars($user_data['telefone']); ?>" required>
+                <input type="text" class="form-control" id="telefone" name="telefone"
+                    value="<?php echo htmlspecialchars($user_data['telefone']); ?>" required>
             </div>
             <div class="mb-1 text-start">
-                <label class="form-label text-danger">Para atualizar os dados é necessário confirmar a senha ou criar uma nova.</label>
+                <label class="form-label text-danger">Para atualizar os dados é necessário confirmar a senha ou criar
+                    uma nova.</label>
             </div>
             <div class="mb-3 text-start">
                 <label for="senha" class="form-label">Senha</label>
                 <div class="input-group">
-                    <input type="password" class="form-control" id="senha" name="senha" minlength="6" onkeyup="validatePassword()" placeholder="Mínimo 6 caracteres">
-                    <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('senha', 'eyeIconSenha')">
+                    <input type="password" class="form-control" id="senha" name="senha" minlength="6"
+                        onkeyup="validatePassword()" placeholder="Mínimo 6 caracteres">
+                    <button type="button" class="btn btn-outline-secondary"
+                        onclick="togglePasswordVisibility('senha', 'eyeIconSenha')">
                         <i id="eyeIconSenha" class="bi bi-eye"></i>
                     </button>
                 </div>
@@ -163,8 +175,10 @@ $conn->close();
             <div class="mb-3 text-start">
                 <label for="confirmarSenha" class="form-label">Confirmar Senha</label>
                 <div class="input-group">
-                    <input type="password" class="form-control" id="confirmarSenha" name="confirmarSenha" onkeyup="confirmPassword()" placeholder="Repita a senha">
-                    <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('confirmarSenha', 'eyeIconConfirmarSenha')">
+                    <input type="password" class="form-control" id="confirmarSenha" name="confirmarSenha"
+                        onkeyup="confirmPassword()" placeholder="Repita a senha">
+                    <button type="button" class="btn btn-outline-secondary"
+                        onclick="togglePasswordVisibility('confirmarSenha', 'eyeIconConfirmarSenha')">
                         <i id="eyeIconConfirmarSenha" class="bi bi-eye"></i>
                     </button>
                 </div>
@@ -190,7 +204,8 @@ $conn->close();
 
             <div class="d-flex justify-content-between">
                 <!-- Botão para excluir o usuário -->
-                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">Excluir Conta</button>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
+                    data-bs-target="#deleteModal">Excluir Conta</button>
 
                 <button type="submit" id="updateButton" class="btn btn-primary" disabled>Atualizar Dados</button>
             </div>
@@ -249,7 +264,8 @@ $conn->close();
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" id="deleteConfirmButton" onclick="deleteUser()">Confirmar Exclusão</button>
+                    <button type="button" class="btn btn-danger" id="deleteConfirmButton"
+                        onclick="deleteUser()">Confirmar Exclusão</button>
                 </div>
             </div>
         </div>
@@ -271,11 +287,11 @@ $conn->close();
 
             // Se a senha for válida, envia a requisição para deletar o usuário
             fetch('delete_user.php', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        password: password
-                    })
+                method: 'POST',
+                body: JSON.stringify({
+                    password: password
                 })
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
@@ -362,7 +378,7 @@ $conn->close();
                 type: 'POST',
                 dataType: 'json',
                 data: $.param(formData), // Converte de volta para string de consulta
-                success: function(response) {
+                success: function (response) {
                     if (response.status === 'success') {
                         showSuccessModal(response.message)
                         //alert('Dados atualizados com sucesso!');
@@ -371,7 +387,7 @@ $conn->close();
                         //alert('Erro: ' + response.message);
                     }
                 },
-                error: function(jqXHR, textStatus, errorThrown) {
+                error: function (jqXHR, textStatus, errorThrown) {
                     showErrorModal(jqXHR.responseText)
                     //console.log("Erro na requisição:", textStatus, errorThrown);
                     //console.log("Resposta do servidor:", jqXHR.responseText);
@@ -380,7 +396,7 @@ $conn->close();
             });
         }
         // Detecta o fechamento do modal de sucesso e atualiza a página
-        $('#successModal').on('hidden.bs.modal', function() {
+        $('#successModal').on('hidden.bs.modal', function () {
             location.reload(); // Atualiza a página
         });
     </script>

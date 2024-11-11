@@ -10,11 +10,10 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] !== (int)$_POST['user_i
     echo json_encode(['status' => 'error', 'message' => 'Você precisa estar logado para atualizar seus dados.']);
     exit();
 }
-
-// Verifica se houve erro na conexão
-if ($conn->connect_error) {
-    echo json_encode(['status' => 'error', 'message' => 'Erro de conexão com o banco de dados.']);
-    exit();
+try {
+    $conexao = criarConexao();
+} catch (Exception $e) {
+    echo '{ "Exceção_capturada": "' . $e->getMessage() . '"}';
 }
 
 // Verifica se a requisição é do tipo POST
@@ -34,13 +33,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
         // Hash da nova senha
         $senhaHash = password_hash($senha, PASSWORD_BCRYPT);
-        $sql = "UPDATE users SET nome = ?, email = ?, telefone = ?, senha = ? WHERE id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssi", $nome, $email, $telefone, $senhaHash, $user_id);
+        $sql = "UPDATE users SET nome = :nome, email = :email, telefone = :telefone, senha = :senha WHERE id = :id";
+        $stmt = $conexao->prepare($sql);
+        // Associa os parâmetros
+        $stmt->bindParam(':nome', $nome);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':telefone', $telefone);
+        $stmt->bindParam(':senha', $senhaHash);
+        $stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
     } else {
-        $sql = "UPDATE users SET nome = ?, email = ?, telefone = ? WHERE id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssi", $nome, $email, $telefone, $user_id);
+        $sql = "UPDATE users SET nome = :nome, email = :email, telefone = :telefone WHERE id = :id";
+        $stmt = $conexao->prepare($sql);
+        // Associa os parâmetros
+        $stmt->bindParam(':nome', $nome);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':telefone', $telefone);
+        $stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
     }
 
     if ($stmt->execute()) {
@@ -50,10 +58,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo json_encode(['status' => 'error', 'message' => 'Erro ao atualizar os dados. Tente novamente.']);
         exit();
     }
-
-    // Fecha a declaração
-    $stmt->close();
 }
 
 // Fecha a conexão com o banco de dados
-$conn->close();
+$conexao = null;
+

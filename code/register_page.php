@@ -30,19 +30,16 @@ if (!(isset($_SESSION['user_id'])) || !(isset($_SESSION['role']))) {
 }
 
 
-// Verifica se houve erro na conexão
-if ($conn->connect_error) {
-    error_log("Erro de conexão: " . $conn->connect_error);
-    echo json_encode(['success' => false, 'message' => 'Erro de conexão com o banco de dados.']);
-    exit();
+try {
+    $conexao = criarConexao();
+} catch (Exception $e) {
+    echo '{ "Exceção_capturada": "' . $e->getMessage() . '"}';
 }
-
 
 // Verifica se o formulário foi enviado
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $nome = filter_input(INPUT_POST, 'nome', FILTER_SANITIZE_STRING);
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-   
     $telefone = filter_input(INPUT_POST, 'telefone', FILTER_SANITIZE_STRING);
     $role = filter_input(INPUT_POST, 'role', FILTER_SANITIZE_STRING);
 
@@ -56,22 +53,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $senhaHash = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
     // Verifica se o email já existe
-    $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
+    $stmt = $conexao->prepare("SELECT id FROM users WHERE email = :email");
+    $stmt->bindParam(':email', $email);
     $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
+
+    if ($stmt->rowCount() > 0) {
         // Se o email já existe, retorna erro com mensagem
         echo json_encode(['success' => false, 'message' => 'Este email já está cadastrado.']);
         exit();
     } else {
         // Inserir o novo usuário
-        $stmt = $conn->prepare("INSERT INTO users (nome, email, senha, telefone, role, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
-        $stmt->bind_param("sssss", $nome, $email, $senhaHash, $telefone, $role);
+        $stmt = $conexao->prepare("INSERT INTO users (nome, email, senha, telefone, role, created_at) VALUES (:nome, :email, :senha, :telefone, :role, NOW())");
+        $stmt->bindParam(':nome', $nome);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':senha', $senhaHash);
+        $stmt->bindParam(':telefone', $telefone);
+        $stmt->bindParam(':role', $role);
 
         if ($stmt->execute()) {
             // Armazena o ID do usuário recém-criado
-            $user_id = $stmt->insert_id;
+            $user_id = $conexao->lastInsertId();
 
             // Armazena o user_id e a role na sessão
             $_SESSION['user_id'] = $user_id;
@@ -84,16 +85,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             exit();
         } else {
             // Se houver erro ao registrar o usuário
-            error_log("Erro ao registrar o usuário: " . $stmt->error);
+            error_log("Erro ao registrar o usuário: " . implode(" ", $stmt->errorInfo()));
             echo json_encode(['success' => false, 'message' => 'Erro ao registrar o usuário. Verifique os dados inseridos.']);
             exit();
         }
     }
-
-    // Fecha a declaração
-    $stmt->close();
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">

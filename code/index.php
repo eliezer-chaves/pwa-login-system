@@ -30,29 +30,33 @@ if (!(isset($_SESSION['user_id'])) || !(isset($_SESSION['role']))) {
     }
 }
 
-// Verifica se houve erro na conexão
-if ($conn->connect_error) {
-    die("Conexão falhou: " . $conn->connect_error);
+
+try {
+    $conexao = criarConexao();
+} catch (Exception $e) {
+    echo '{ "Exceção_capturada": "' . $e->getMessage() . '"}';
 }
+
 // Verifica se o método de requisição é POST
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email']);
     $senha = trim($_POST['password']);
     
-    // Prepara a consulta para buscar o usuário pelo email
-    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
+    // Prepara a consulta para buscar o usuário pelo email usando PDO
+    $stmt = $conexao->prepare("SELECT * FROM users WHERE email = :email");
+    $stmt->bindParam(':email', $email);
     $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        $user = $result->fetch_assoc();
+    
+    // Obtém o resultado da consulta
+    if ($stmt->rowCount() > 0) {
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // Verifica se a senha está correta
         if (password_verify($senha, $user['senha'])) {
             $_SESSION['user_id'] = $user['id'];  // Armazena o ID do usuário na sessão
             $_SESSION['role'] = $user['role'];   // Armazena a role do usuário
             echo $_SESSION['user_id'] . $_SESSION['role'];
+            
             // Redireciona para a página apropriada com base na role
             if ($user['role'] === 'admin') {
                 header('Location: dashboard.php');
@@ -74,7 +78,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 // Fecha a conexão com o banco de dados
-$conn->close();
+$conexao = null;
+
 ?>
 
 <!DOCTYPE html>
@@ -138,7 +143,7 @@ $conn->close();
             <div class="mb-3">
                 <label for="password" class="form-label text-white">Senha</label>
                 <div class="input-group">
-                    <input type="password" class="form-control" id="password" name="password" required oninput="validatePassword()">
+                    <input type="password" class="form-control" id="password" name="password" required>
                     <button type="button" class="btn btn-secondary" id="togglePassword" onclick="togglePasswordVisibility()">
                         <i id="eyeIcon" class="bi bi-eye"></i>
                     </button>

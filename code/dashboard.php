@@ -24,14 +24,16 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
-// Verifica se houve erro na conexão
-if ($conn->connect_error) {
-    die("Falha na conexão: " . $conn->connect_error);
+try {
+    $conexao = criarConexao();
+} catch (Exception $e) {
+    echo '{ "Exceção_capturada": "' . $e->getMessage() . '"}';
 }
 
 // Consulta para obter a lista de usuários
 $sql = "SELECT nome, email, telefone, role, created_at FROM users";
-$result = $conn->query($sql);
+$stmt = $conexao->prepare($sql);
+$stmt->execute();
 
 ?>
 
@@ -51,12 +53,13 @@ $result = $conn->query($sql);
             right: 0;
             background-color: #343a40;
             z-index: 1000;
+            height: 75px;
         }
         .navbar .btn-logout {
             color: white;
         }
         .content {
-            margin-top: 60px; /* Deixa espaço para o cabeçalho fixo */
+            margin-top: 100px; /* Deixa espaço para o cabeçalho fixo */
         }
         .card-table {
             border-radius: 15px; /* Bordas arredondadas no card */
@@ -74,7 +77,7 @@ $result = $conn->query($sql);
 <body>
 
 <!-- Cabeçalho fixo com botão de logout -->
-<nav class="navbar navbar-expand-lg navbar-dark">
+<nav class="navbar navbar-expand-lg navbar-dark mb-3">
     <div class="container-fluid">
         <a class="navbar-brand" href="#">Admin Dashboard</a>
         <a href="logout.php" class="btn btn-link btn-logout">Logout</a>
@@ -84,7 +87,7 @@ $result = $conn->query($sql);
 <!-- Conteúdo da página -->
 <div class="container content">
     <h2 class="text-center">Lista de Usuários</h2>
-    <div class="card card-table">
+    <div class="card card-table mt-2">
         <div class="card-header">
             <h5 class="mb-0">Usuários Registrados</h5>
         </div>
@@ -100,8 +103,8 @@ $result = $conn->query($sql);
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($result->num_rows > 0): ?>
-                        <?php while($row = $result->fetch_assoc()): ?>
+                    <?php if ($stmt->rowCount() > 0): ?>
+                        <?php while($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($row['nome']); ?></td>
                                 <td><?php echo htmlspecialchars($row['email']); ?></td>
@@ -121,8 +124,3 @@ $result = $conn->query($sql);
 
 </body>
 </html>
-
-<?php
-// Fecha a conexão com o banco de dados
-$conn->close();
-?>
