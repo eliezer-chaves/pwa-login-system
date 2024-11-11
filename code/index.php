@@ -41,12 +41,12 @@ try {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email']);
     $senha = trim($_POST['password']);
-    
+
     // Prepara a consulta para buscar o usuário pelo email usando PDO
     $stmt = $conexao->prepare("SELECT * FROM users WHERE email = :email");
     $stmt->bindParam(':email', $email);
     $stmt->execute();
-    
+
     // Obtém o resultado da consulta
     if ($stmt->rowCount() > 0) {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -56,7 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['user_id'] = $user['id'];  // Armazena o ID do usuário na sessão
             $_SESSION['role'] = $user['role'];   // Armazena a role do usuário
             echo $_SESSION['user_id'] . $_SESSION['role'];
-            
+
             // Redireciona para a página apropriada com base na role
             if ($user['role'] === 'admin') {
                 header('Location: dashboard.php');
@@ -90,7 +90,8 @@ $conexao = null;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
 
     <style>
         body {
@@ -120,12 +121,13 @@ $conexao = null;
             border-color: #212529;
             box-shadow: none;
         }
-       
+
         a:visited {
             color: #212529;
             text-decoration: none;
         }
-        button:active{
+
+        button:active {
             border-color: none;
         }
     </style>
@@ -144,7 +146,8 @@ $conexao = null;
                 <label for="password" class="form-label text-white">Senha</label>
                 <div class="input-group">
                     <input type="password" class="form-control" id="password" name="password" required>
-                    <button type="button" class="btn btn-secondary" id="togglePassword" onclick="togglePasswordVisibility()">
+                    <button type="button" class="btn btn-secondary" id="togglePassword"
+                        onclick="togglePasswordVisibility()">
                         <i id="eyeIcon" class="bi bi-eye"></i>
                     </button>
                 </div>
@@ -166,10 +169,9 @@ $conexao = null;
                         eyeIcon.classList.add('bi-eye');
                     }
                 }
+
+
             </script>
-
-
-
             <button type="submit" class="btn btn-dark w-100">Entrar</button>
         </form>
         <div class="text-center mt-3">
@@ -206,8 +208,7 @@ $conexao = null;
             }
         }
 
-        // Executa a função ao carregar a página
-        document.addEventListener("DOMContentLoaded", checkErrorModal);
+
     </script>
 </body>
 
