@@ -41,11 +41,6 @@ CREATE TABLE `users` (
 -- Despejando dados para a tabela `users`
 --
 
-INSERT INTO `users` (`id`, `nome`, `email`, `senha`, `telefone`, `role`, `created_at`) VALUES
-(43, 'Eliezer Leite Chaves', 'chaves.eliezer@outlook.com.br', '$2y$10$LLaIjS9ZsI/rBUEGFp7ZsOzDUKW0WJiD0mWm8O0ZQh1Y683w4Xanq', '12992156300', 'admin', '2024-11-06 17:49:48'),
-(45, 'Eliezer Leite Chaves', 'chaves.eliezer@outlook.com', '$2y$10$m/9Deje6HCue8fEzW06s5OIaBLtdyhed374SobSrQDGevgIgj3gsS', '12992156300', 'user', '2024-11-06 21:11:20'),
-(46, 'igor salgado', 'igorsalgado67@gmail.com', '$2y$10$jyzzbQqR0TtNGPlwlwyH1eRXafU6AownRFBokQZEl0e3hAAsntAua', '12996826463', 'user', '2024-11-06 21:37:41');
-
 --
 -- Índices para tabelas despejadas
 --

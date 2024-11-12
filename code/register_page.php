@@ -2,6 +2,7 @@
 require_once 'session_config.php';
 require_once 'db.php';
 
+
 // Inicia a sessão
 session_start();
 
@@ -32,64 +33,63 @@ if (!(isset($_SESSION['user_id'])) || !(isset($_SESSION['role']))) {
 
 try {
     $conexao = criarConexao();
-} catch (Exception $e) {
-    echo '{ "Exceção_capturada": "' . $e->getMessage() . '"}';
-}
+    // Verifica se o formulário foi enviado
+    if ($_SERVER["REQUEST_METHOD"] === "POST") {
+        $nome = filter_input(INPUT_POST, 'nome', FILTER_SANITIZE_STRING);
+        $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+        $telefone = filter_input(INPUT_POST, 'telefone', FILTER_SANITIZE_STRING);
+        $role = filter_input(INPUT_POST, 'role', FILTER_SANITIZE_STRING);
 
-// Verifica se o formulário foi enviado
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $nome = filter_input(INPUT_POST, 'nome', FILTER_SANITIZE_STRING);
-    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-    $telefone = filter_input(INPUT_POST, 'telefone', FILTER_SANITIZE_STRING);
-    $role = filter_input(INPUT_POST, 'role', FILTER_SANITIZE_STRING);
-
-    // Verifica se o email é válido
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        echo json_encode(['success' => false, 'message' => 'Formato de email inválido.']);
-        exit();
-    }
-
-    // Hash da senha
-    $senhaHash = password_hash($_POST['password'], PASSWORD_DEFAULT);
-
-    // Verifica se o email já existe
-    $stmt = $conexao->prepare("SELECT id FROM users WHERE email = :email");
-    $stmt->bindParam(':email', $email);
-    $stmt->execute();
-
-    if ($stmt->rowCount() > 0) {
-        // Se o email já existe, retorna erro com mensagem
-        echo json_encode(['success' => false, 'message' => 'Este email já está cadastrado.']);
-        exit();
-    } else {
-        // Inserir o novo usuário
-        $stmt = $conexao->prepare("INSERT INTO users (nome, email, senha, telefone, role, created_at) VALUES (:nome, :email, :senha, :telefone, :role, NOW())");
-        $stmt->bindParam(':nome', $nome);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':senha', $senhaHash);
-        $stmt->bindParam(':telefone', $telefone);
-        $stmt->bindParam(':role', $role);
-
-        if ($stmt->execute()) {
-            // Armazena o ID do usuário recém-criado
-            $user_id = $conexao->lastInsertId();
-
-            // Armazena o user_id e a role na sessão
-            $_SESSION['user_id'] = $user_id;
-            $_SESSION['role'] = $role;
-
-            // Define a URL de redirecionamento com base na role
-            $redirect_url = ($role === 'admin') ? 'dashboard.php' : 'welcome.php';
-            // Retorna a resposta JSON com a URL para redirecionamento
-            echo json_encode(['success' => true, 'redirect' => $redirect_url]);
-            exit();
-        } else {
-            // Se houver erro ao registrar o usuário
-            error_log("Erro ao registrar o usuário: " . implode(" ", $stmt->errorInfo()));
-            echo json_encode(['success' => false, 'message' => 'Erro ao registrar o usuário. Verifique os dados inseridos.']);
+        // Verifica se o email é válido
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['success' => false, 'message' => 'Formato de email inválido.']);
             exit();
         }
+
+        // Hash da senha
+        $senhaHash = password_hash($_POST['password'], PASSWORD_DEFAULT);
+
+        // Verifica se o email já existe
+        $stmt = $conexao->prepare("SELECT id FROM users WHERE email = :email");
+        $stmt->bindParam(':email', $email);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            // Se o email já existe, retorna erro com mensagem
+            echo json_encode(['success' => false, 'message' => 'Este email já está cadastrado.']);
+            exit();
+        } else {
+            // Inserir o novo usuário
+            $stmt = $conexao->prepare("INSERT INTO users (nome, email, senha, telefone, role, created_at) VALUES (:nome, :email, :senha, :telefone, :role, NOW())");
+            $stmt->bindParam(':nome', $nome);
+            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':senha', $senhaHash);
+            $stmt->bindParam(':telefone', $telefone);
+            $stmt->bindParam(':role', $role);
+
+            if ($stmt->execute()) {
+                // Armazena o ID do usuário recém-criado
+                $user_id = $conexao->lastInsertId();
+
+                // Armazena o user_id e a role na sessão
+                $_SESSION['user_id'] = $user_id;
+                $_SESSION['role'] = $role;
+
+                // Define a URL de redirecionamento com base na role
+                $redirect_url = ($role === 'admin') ? 'dashboard.php' : 'welcome.php';
+                // Retorna a resposta JSON com a URL para redirecionamento
+                echo json_encode(['success' => true, 'redirect' => $redirect_url]);
+                exit();
+            } else {
+                // Se houver erro ao registrar o usuário
+                error_log("Erro ao registrar o usuário: " . implode(" ", $stmt->errorInfo()));
+                echo json_encode(['success' => false, 'message' => 'Erro ao registrar o usuário. Verifique os dados inseridos.']);
+                exit();
+            }
+        }
     }
+} catch (Exception $e) {
+    echo '{ "Exceção_capturada": "' . $e->getMessage() . '"}';
 }
 ?>
 
@@ -132,7 +132,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .valid-feedback {
             color: green;
         }
-        
     </style>
 </head>
 
@@ -155,8 +154,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div class="mb-3">
                 <label for="password" class="form-label">Senha</label>
                 <div class="input-group">
-                    <input type="password" class="form-control" id="password" name="password" required oninput="validatePassword()">
-                    <button type="button" class="btn btn-outline-secondary" id="togglePassword" onclick="togglePasswordVisibility()">
+                    <input type="password" class="form-control" id="password" name="password" required
+                        oninput="validatePassword()">
+                    <button type="button" class="btn btn-outline-secondary" id="togglePassword"
+                        onclick="togglePasswordVisibility()">
                         <i id="eyeIcon" class="bi bi-eye"></i>
                     </button>
                 </div>
@@ -165,8 +166,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div class="mb-3">
                 <label for="confirm_password" class="form-label">Confirmar Senha</label>
                 <div class="input-group">
-                    <input type="password" class="form-control" id="confirm_password" required oninput="checkPasswordsMatch()">
-                    <button type="button" class="btn btn-outline-secondary" id="toggleConfirmPassword" onclick="toggleConfirmPasswordVisibility()">
+                    <input type="password" class="form-control" id="confirm_password" required
+                        oninput="checkPasswordsMatch()">
+                    <button type="button" class="btn btn-outline-secondary" id="toggleConfirmPassword"
+                        onclick="toggleConfirmPasswordVisibility()">
                         <i id="eyeIconConfirm" class="bi bi-eye"></i>
                     </button>
                 </div>
@@ -176,7 +179,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div class="mb-3">
                 <label class="form-label">Função (Role)</label>
                 <div class="form-check">
-                    <input class="form-check-input" type="radio" name="role" id="roleUser" value="user" checked required>
+                    <input class="form-check-input" type="radio" name="role" id="roleUser" value="user" checked
+                        required>
                     <label class="form-check-label" for="roleUser">Usuário</label>
                 </div>
                 <div class="form-check">
@@ -261,16 +265,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             const modal = new bootstrap.Modal(document.getElementById('errorModal'));
             modal.show();
         }
-
-
-
-        $('#registrationForm').on('submit', function(e) {
+        $('#registrationForm').on('submit', function (e) {
             e.preventDefault(); // Impede o envio normal do formulário
 
-            $.post("register_page.php", $(this).serialize(), function(data) {
+            $.post("register_page.php", $(this).serialize(), function (data) {
                 try {
                     const response = JSON.parse(data);
-                    console.log(response); // Verifique a resposta no console
+                    //console.log(response); // Verifique a resposta no console
 
                     if (response.success === false) {
                         // Exibe a mensagem de erro se houver falha
@@ -280,12 +281,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         window.location.href = response.redirect;
                     }
                 } catch (e) {
-                    console.error('Erro ao processar resposta JSON:', e);
+                    //console.error('Erro ao processar resposta JSON:', e);
                     showErrorModal('Erro inesperado ao processar a resposta.');
                 }
-            }).fail(function(xhr, status, error) {
+            }).fail(function (xhr, status, error) {
                 // Caso haja um erro na requisição AJAX
-                console.error("Erro na requisição:", error);
+                //console.error("Erro na requisição:", error);
                 showErrorModal('Erro inesperado ao processar a requisição.');
             });
         });

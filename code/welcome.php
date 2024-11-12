@@ -2,6 +2,7 @@
 require_once 'session_config.php';
 require_once 'db.php';
 
+
 // Inicia a sessão
 session_start();
 
@@ -27,11 +28,9 @@ if (!isset($_SESSION['user_id'])) {
 // Verifica se o usuário tem a role 'user'
 if ($_SESSION['role'] !== 'user') {
     // Se o usuário não for da role 'user', redireciona para outra página (ex: dashboard)
-    header("Location: dashboard.php");
+    header("Location: ../view/dashboard.php");
     exit();
 }
-
-
 
 try {
     $conexao = criarConexao();
