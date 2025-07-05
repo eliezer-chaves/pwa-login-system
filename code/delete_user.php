@@ -11,39 +11,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Exception $e) {
         echo '{ "Exceção_capturada": "' . $e->getMessage() . '"}';
     }
-    
-// Recebe a senha informada no modal
-$input_password = json_decode(file_get_contents('php://input'), true)['password'];
-$user_id = $_SESSION['user_id'];
 
-// Busca o usuário no banco de dados
-$sql = "SELECT senha FROM users WHERE id = :id";
-$stmt = $conexao->prepare($sql);
-$stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
-$stmt->execute();
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Recebe a senha informada no modal
+    $input_password = json_decode(file_get_contents('php://input'), true)['password'];
+    $user_id = $_SESSION['user_id'];
 
-if ($result) {
-    // Verifica se a senha informada é a mesma que está no banco
-    if (password_verify($input_password, $result['senha'])) {
-        // Deleta o usuário
-        $delete_sql = "DELETE FROM users WHERE id = :id";
-        $delete_stmt = $conexao->prepare($delete_sql);
-        $delete_stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
-        $delete_stmt->execute();
+    // Busca o usuário no banco de dados
+    $sql = "SELECT senha FROM users WHERE id = :id";
+    $stmt = $conexao->prepare($sql);
+    $stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
+    $stmt->execute();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Apaga os dados da sessão
-        session_destroy();
+    if ($result) {
+        // Verifica se a senha informada é a mesma que está no banco
+        if (password_verify($input_password, $result['senha'])) {
+            // Deleta o usuário
+            $delete_sql = "DELETE FROM users WHERE id = :id";
+            $delete_stmt = $conexao->prepare($delete_sql);
+            $delete_stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
+            $delete_stmt->execute();
 
-        // Retorna sucesso
-        echo json_encode(['status' => 'success']);
+            // Apaga os dados da sessão
+            session_destroy();
+
+            // Retorna sucesso
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Senha incorreta.']);
+        }
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Senha incorreta.']);
+        echo json_encode(['status' => 'error', 'message' => 'Usuário não encontrado.']);
     }
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Usuário não encontrado.']);
-}
 
-// Fecha a conexão
-$conexao = null;
+    // Fecha a conexão
+    $conexao = null;
 }

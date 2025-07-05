@@ -1,9 +1,9 @@
 <?php
 function criarConexao()
 {
-	$host = 'db4free.net'; // 200.145.23.2
-	$db = '';
-	$user = '';
+	$host = 'localhost'; 
+	$db = 'pwa_app'; 
+	$user = 'root';
 	$pass = '';
 	$charset = 'utf8mb4';
 	$options = [
